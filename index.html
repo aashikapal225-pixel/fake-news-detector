@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fake News Detector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--panel:#ffffff;--ink:#14213d;--muted:#56637a;--line:#c5cddb;--red:#c81d34;--redbg:#fde3e6;--green:#17724f;--greenbg:#ddf3e9;--amber:#9a5700;--amberbg:#fff0cc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1626;--panel:#172038;--ink:#e8edf7;--muted:#9aa7bf;--line:#2b3856;--red:#ff7487;--redbg:#4a1d28;--green:#4cd4a0;--greenbg:#153a30;--amber:#ffc04d;--amberbg:#3d2f10;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1626;--panel:#172038;--ink:#e8edf7;--muted:#9aa7bf;--line:#2b3856;--red:#ff7487;--redbg:#4a1d28;--green:#4cd4a0;--greenbg:#153a30;--amber:#ffc04d;--amberbg:#3d2f10;color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.65 'Newsreader',Georgia,serif}
+.wrap{max-width:1120px;margin:0 auto;padding:40px 20px 56px}
+h1,h2,h3,.ui{font-family:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif}
+h1{font-size:clamp(2.4rem,6.5vw,4.6rem);line-height:1;letter-spacing:-.035em;font-weight:800;margin:0 0 14px}
+.lede{max-width:46ch;color:var(--muted);margin:0 0 36px;font-size:1.15rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--ink);padding:20px}
+label{display:block;font:600 1rem 'Bricolage Grotesque',system-ui,sans-serif;margin-bottom:8px}
+textarea{width:100%;min-height:320px;resize:vertical;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:1.05rem;padding:14px;border-radius:4px}
+textarea:focus,button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+button{font:600 .95rem 'Bricolage Grotesque',system-ui,sans-serif;border:1.5px solid var(--ink);background:transparent;color:var(--ink);padding:10px 16px;border-radius:4px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--bg)}
+button:hover{background:var(--line)}button.primary:hover{opacity:.88;background:var(--ink)}
+.empty{color:var(--muted);margin:0}
+.verdict{font:800 clamp(1.7rem,4vw,2.4rem)/1.1 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 4px}
+.v-bad{color:var(--red)}.v-mid{color:var(--amber)}.v-good{color:var(--green)}
+.score{color:var(--muted);margin:0 0 18px}
+.meter{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--red),#e8a21a 50%,var(--green));margin-top:6px}
+.pin{position:absolute;top:-6px;width:6px;height:26px;margin-left:-3px;background:var(--ink);border:2px solid var(--panel);border-radius:3px;transition:left .9s cubic-bezier(.2,.8,.2,1)}
+.ends{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin:8px 0 22px}
+.warn{background:var(--amberbg);color:var(--ink);border-left:4px solid var(--amber);padding:8px 12px;margin:0 0 18px;font-size:.95rem}
+h3{font-size:1.05rem;margin:22px 0 8px}
+.copy{border:1px solid var(--line);padding:14px;background:var(--bg);white-space:pre-wrap;word-wrap:break-word;max-height:260px;overflow:auto;font-size:1.02rem}
+mark{background:none;color:inherit;padding:0 1px}
+mark.bad{background:var(--redbg);text-decoration:underline wavy var(--red);text-underline-offset:4px}
+mark.good{background:var(--greenbg);border-bottom:2px solid var(--green)}
+.key{font-size:.88rem;color:var(--muted);margin:8px 0 0}
+ul.sig{list-style:none;margin:0;padding:0}
+ul.sig li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}
+ul.sig b{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:600}
+ul.sig span.fx{font:600 .95rem 'Bricolage Grotesque',system-ui,sans-serif}
+.fx.up{color:var(--red)}.fx.down{color:var(--green)}
+ul.sig small{grid-column:1/-1;color:var(--muted);font-size:.92rem;line-height:1.4}
+.about{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+@media (max-width:860px){.about{grid-template-columns:1fr}}
+.about h2{font-size:1.4rem;letter-spacing:-.01em;margin:0 0 8px}
+.about p{margin:0 0 10px;color:var(--muted)}
+footer{margin-top:40px;color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fake News Detector</h1>
+  <p class="lede">Paste a headline or an article. The detector marks the phrases that raise doubt in red and the ones that build trust in green.</p>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="inlbl">
+      <label id="inlbl" for="txt">Article or headline</label>
+      <textarea id="txt" placeholder="Paste the news text here…"></textarea>
+      <div class="row">
+        <button class="primary" id="go">Check article</button>
+        <button id="s1">Try a suspicious sample</button>
+        <button id="s2">Try a reliable sample</button>
+        <button id="clr">Clear</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-live="polite" id="out">
+      <p class="empty">Paste some text and select <b>Check article</b>. The result, the marked-up text and the reasons will appear here.</p>
+    </section>
+  </div>
+
+  <div class="about">
+    <div>
+      <h2>How it works</h2>
+      <p>The detector reads the writing style, the way an editor would. It looks for sensational words, clickbait phrases, conspiracy framing, absolute claims, ALL-CAPS shouting, repeated exclamation marks and pressure to share.</p>
+      <p>It also rewards what honest reporting usually has: named sources, direct quotes, specific figures and measured wording. Each signal adds or removes points from a credibility score out of 100.</p>
+    </div>
+    <div>
+      <h2>What it cannot do</h2>
+      <p>It does not check facts. A calm, well-sourced article can still be false, and a blunt true story can score low. Treat the score as a prompt to check the source, the date and a second outlet.</p>
+      <p>Short texts give weak results, so paste at least a few sentences.</p>
+    </div>
+  </div>
+  <footer>Project for the Version Control Systems course. Runs entirely in your browser; nothing you paste is sent anywhere.</footer>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var ACR=['NASA','ISRO','NATO','COVID','UNESCO','INDIA','CBSE','IILM','OPEC','FIFA','ICC','BCCI','UNICEF'];
+var RULES=[
+ {t:'bad',label:'Sensational wording',w:5,cap:25,note:'Emotional, headline-grabbing words are common in misleading posts.',re:/\b(shocking|unbelievable|miracle|bombshell|exposed|explosive|jaw-dropping|devastating|outrageous|horrifying|insane|incredible|stunning)\b/gi},
+ {t:'bad',label:'Clickbait phrases',w:8,cap:24,note:'Phrases built to make you click rather than inform you.',re:/(you won.t believe|what happens next|doctors hate|one weird trick|will blow your mind|nobody is talking about|goes viral|this is why)/gi},
+ {t:'bad',label:'Conspiracy framing',w:8,cap:24,note:'Claims of hidden truths and cover-ups, usually without evidence.',re:/(cover-?up|mainstream media|deep state|they don.t want you to know|wake up|hidden truth|hiding the truth|the truth about|secret document|big pharma|globalists?|crisis actors?|hoax)/gi},
+ {t:'bad',label:'Absolute claims',w:5,cap:15,note:'Real reporting rarely promises 100% certainty or miracle results.',re:/(100% (proven|true|guaranteed|safe)|guaranteed|proven cure|cures? (all|everything)|no side effects|everyone knows)/gi},
+ {t:'bad',label:'Pressure to share',w:8,cap:16,note:'Urging you to forward or share before checking is a classic misinformation tactic.',re:/(share (this|now|before)|forward this|before (it.s|it is|they) (deleted|removed|banned)|spread the word)/gi},
+ {t:'good',label:'Names a source',w:4,cap:20,note:'Attributing information to people, documents or institutions lets you verify it.',re:/(according to|said|says|told reporters|reported|stated|announced|confirmed|spokesperson|statement from|published (by|in)|minutes|study|researchers|officials|analysts)/gi},
+ {t:'good',label:'Direct quotation',w:3,cap:6,note:'Quoted words can be traced back to a speaker.',re:/\u201c[^\u201d]{8,}\u201d|"[^"]{8,}"/g},
+ {t:'good',label:'Measured wording',w:2,cap:6,note:'Careful words such as “may”, “estimated” or “although” signal honest uncertainty.',re:/\b(reportedly|allegedly|appears to|may|could|suggests?|estimated|approximately|although|however)\b/gi}
+];
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function analyze(text){
+  var words=text.split(/\s+/).filter(Boolean).length,ranges=[],sig=[],m,i;
+  RULES.forEach(function(r){
+    var re=new RegExp(r.re.source,r.re.flags),n=0;
+    while((m=re.exec(text))){n++;ranges.push({s:m.index,e:m.index+m[0].length,t:r.t,l:r.label});if(m[0].length===0)re.lastIndex++}
+    if(n){var eff=Math.min(r.cap,n*r.w);sig.push({label:r.label,note:r.note,n:n,eff:r.t==='bad'?eff:-eff})}
+  });
+  var capsRe=/\b[A-Z]{4,}\b/g,cn=0;
+  while((m=capsRe.exec(text))){if(ACR.indexOf(m[0])<0){cn++;ranges.push({s:m.index,e:m.index+m[0].length,t:'bad',l:'ALL-CAPS word'})}}
+  if(cn)sig.push({label:'ALL-CAPS shouting',note:'Capital letters are used to add alarm instead of evidence.',n:cn,eff:Math.min(15,cn*3)});
+  var exRe=/!/g,en=0;
+  while((m=exRe.exec(text))){en++;ranges.push({s:m.index,e:m.index+1,t:'bad',l:'Exclamation mark'})}
+  if(en>1)sig.push({label:'Exclamation marks',note:'News reports rarely need more than one.',n:en,eff:Math.min(12,en*3)});
+  var hasSrc=sig.some(function(x){return x.label==='Names a source'});
+  if(!hasSrc&&words>=30)sig.push({label:'No source named',note:'Nothing in the text says where the information came from.',n:0,eff:10});
+  var nums=(text.match(/\b\d[\d,.]*\s?(%|percent|million|billion|crore|lakh)?/g)||[]).length;
+  if(nums>=2)sig.push({label:'Specific figures',note:'Concrete numbers and dates can be checked.',n:nums,eff:-6});
+  var susp=40;sig.forEach(function(x){susp+=x.eff});
+  susp=Math.max(2,Math.min(98,susp));
+  ranges.sort(function(a,b){return a.s-b.s||b.e-a.e});
+  var clean=[],last=-1;ranges.forEach(function(r){if(r.s>=last){clean.push(r);last=r.e}});
+  var html='',pos=0;
+  clean.forEach(function(r){html+=esc(text.slice(pos,r.s))+'<mark class="'+r.t+'" title="'+esc(r.l)+'">'+esc(text.slice(r.s,r.e))+'</mark>';pos=r.e});
+  html+=esc(text.slice(pos));
+  sig.sort(function(a,b){return Math.abs(b.eff)-Math.abs(a.eff)});
+  return{words:words,cred:100-susp,html:html,sig:sig};
+}
+function render(a){
+  var c=a.cred,cls,title;
+  if(c>=70){cls='v-good';title='Looks credible'}
+  else if(c>40){cls='v-mid';title='Unclear: check the source'}
+  else{cls='v-bad';title='Likely fake or misleading'}
+  var h='<p class="verdict '+cls+'">'+title+'</p><p class="score">Credibility score: '+c+' out of 100</p>';
+  if(a.words<25)h+='<p class="warn">This text is short, so the result is weak. Paste more of the article for a better check.</p>';
+  h+='<div class="meter" role="img" aria-label="Credibility '+c+' out of 100"><div class="pin" id="pin" style="left:50%"></div></div><div class="ends"><span>Likely fake</span><span>Credible</span></div>';
+  h+='<h3>Marked-up text</h3><div class="copy">'+a.html+'</div><p class="key"><mark class="bad">Red</mark> raises doubt. <mark class="good">Green</mark> builds trust. Hover a mark to see why.</p>';
+  h+='<h3>Why this score</h3>';
+  if(a.sig.length){
+    h+='<ul class="sig">';
+    a.sig.forEach(function(x){
+      var up=x.eff>0;
+      h+='<li><b>'+esc(x.label)+(x.n?' ('+x.n+')':'')+'</b><span class="fx '+(up?'up':'down')+'">'+(up?'Raises doubt +':'Builds trust ')+Math.abs(x.eff)+'</span><small>'+esc(x.note)+'</small></li>';
+    });
+    h+='</ul>';
+  }else h+='<p class="empty">No strong signals found either way.</p>';
+  $('out').innerHTML=h;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){var p=$('pin');if(p)p.style.left=c+'%'})});
+}
+function run(){
+  var t=$('txt').value.trim();
+  if(t.split(/\s+/).filter(Boolean).length<3){
+    $('out').innerHTML='<p class="empty">Add at least a headline or a few sentences, then select <b>Check article</b>.</p>';return;
+  }
+  render(analyze(t));
+}
+var S1='SHOCKING!!! Doctors HATE this one miracle cure the mainstream media doesn\u2019t want you to know about! Scientists have been hiding the TRUTH for years and a secret document just EXPOSED the cover-up. You won\u2019t believe what happens next. 100% proven, no side effects! Share this before it gets deleted!';
+var S2='The city council voted 7\u20132 on Tuesday to approve a new bus lane on Main Street, according to minutes published by the council. Mayor Anita Rao said the project will cost about 4.2 million rupees and finish in March. \u201cThis will cut travel times for thousands of commuters,\u201d she told reporters. Analysts at a transport institute said the plan could reduce delays, although one noted that shop owners have raised concerns about parking.';
+$('go').onclick=run;
+$('s1').onclick=function(){$('txt').value=S1;run()};
+$('s2').onclick=function(){$('txt').value=S2;run()};
+$('clr').onclick=function(){$('txt').value='';$('out').innerHTML='<p class="empty">Paste some text and select <b>Check article</b>. The result, the marked-up text and the reasons will appear here.</p>';$('txt').focus()};
+})();
+</script>
+</body>
+</html>
