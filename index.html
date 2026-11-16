@@ -98,7 +98,7 @@ footer{margin-top:40px;color:var(--muted);font-size:.9rem}
 var $=function(i){return document.getElementById(i)};
 var ACR=['NASA','ISRO','NATO','COVID','UNESCO','INDIA','CBSE','IILM','OPEC','FIFA','ICC','BCCI','UNICEF'];
 var RULES=[
- {t:'bad',label:'Sensational wording',w:5,cap:25,note:'Emotional, headline-grabbing words are common in misleading posts.',re:/\b(shocking|unbelievable|miracle|bombshell|exposed|explosive|jaw-dropping|devastating|outrageous|horrifying|insane|incredible|stunning)\b/gi},
+ {t:'bad',label:'Sensational wording',w:5,cap:25,note:'Emotional, headline-grabbing words are common in misleading posts.',re:/\b(shocking|unbelievable|miracle|bombshell|exposed|explosive|jaw-dropping|devastating|outrageous|horrifying|insane|incredible|stunning|breaking|slammed)\b/gi},
  {t:'bad',label:'Clickbait phrases',w:8,cap:24,note:'Phrases built to make you click rather than inform you.',re:/(you won.t believe|what happens next|doctors hate|one weird trick|will blow your mind|nobody is talking about|goes viral|this is why)/gi},
  {t:'bad',label:'Conspiracy framing',w:8,cap:24,note:'Claims of hidden truths and cover-ups, usually without evidence.',re:/(cover-?up|mainstream media|deep state|they don.t want you to know|wake up|hidden truth|hiding the truth|the truth about|secret document|big pharma|globalists?|crisis actors?|hoax)/gi},
  {t:'bad',label:'Absolute claims',w:5,cap:15,note:'Real reporting rarely promises 100% certainty or miracle results.',re:/(100% (proven|true|guaranteed|safe)|guaranteed|proven cure|cures? (all|everything)|no side effects|everyone knows)/gi},
